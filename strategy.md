@@ -62,7 +62,8 @@ Start in economic mode, with first one muckraker to find the enemy base and dest
 
 ### Politician
 
-- Move towards enemy base, but stay in range of a friendly slanderer or EC.
+- **Defensive**: Move towards enemy base, but stay in range of a friendly slanderer or EC.
+- **Offensive**: Move towards enemy base and try to convert it.
 - When spotting an enemy muckraker:
   1. Raise flag
   2. Move towards the muckraker

@@ -102,8 +102,19 @@ public strictfp class RobotPlayer {
         Team enemy = rc.getTeam().opponent();
         int actionRadius = rc.getType().actionRadiusSquared;
         RobotInfo[] attackable = rc.senseNearbyRobots(actionRadius, enemy);
-        if (attackable.length != 0 && rc.canEmpower(actionRadius)) {
-            System.out.println("empowering...");
+        boolean tryAttack = false;
+    	for (RobotInfo r : attackable) {
+    		if (r.getType() == RobotType.MUCKRAKER) {
+    			tryAttack = true;
+    			break;
+    		}
+    	}
+        RobotInfo[] convertable = rc.senseNearbyRobots(actionRadius, Team.NEUTRAL);
+        if (convertable.length > 0) {
+        	tryAttack = true;
+        } 
+    	if (tryAttack && rc.canEmpower(actionRadius)) {
+    		System.out.println("empowering...");
             rc.empower(actionRadius);
             System.out.println("empowered");
             return;
