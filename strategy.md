@@ -26,6 +26,7 @@ Also explained quite well [here](https://2021.battlecode.org/specs/specs.md.html
 - Protect slanderers from muckrakers by speeching muckrakers with politicians
 - Muckrake enemy slanderers to boost speech power
 - Collect influence by capturing EC's and building slanderers
+- Protect bases from conversion by enemy politicians
 
 ## Unit composition
 
@@ -47,24 +48,25 @@ Start in economic mode, with first one muckraker to find the enemy base and dest
 
 - **Economic mode**: create Muck, Poli and Slan in 1:2:3 proportions to gain a little intel, have solid protection for slanderers (politicians also self-destruct) and generate lots of influence.
 - **Offensive mode**: create mainly muckrakers and some politicians to destroy all enemy slanderers and other robots.
-- **Defensive mode**: create mainly politicians to defend slanderers from enemy muckrakers.
+- **Defensive mode**: create mainly politicians to defend slanderers from enemy muckrakers and base from politicians.
 
 ### Muckraker
 
 - Move around the map hunting for slanderers
 - Stay away from enemy politicians
-- Report back enemy bot types after some time
+- Report back unknown (enemy) base locations
 
 ### Slanderer
 
 - Move away from enemy base if location is known
 - Move towards friendly slanderers (clump up)
+- Stay close to the base but keep space for new spawns.
 
 ### Politician
 
 - **Defensive**: Move towards enemy base, but stay in range of a friendly slanderer or EC.
 - **Offensive**: Move towards enemy base and try to convert it.
 - When spotting an enemy muckraker:
-  1. Raise flag
+  1. Update flag
   2. Move towards the muckraker
   3. Speech

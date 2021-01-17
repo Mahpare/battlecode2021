@@ -1,4 +1,7 @@
 package hackatrainee_v1;
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import battlecode.common.*;
 
 public strictfp class RobotPlayer {
@@ -23,7 +26,12 @@ public strictfp class RobotPlayer {
 
     static int turnCount;
     
+    // Mobile robot variables
+    static int masterID = 0;
+    
     // Enlightenment Center variables
+    static HashMap<RobotType, ArrayList<Integer>> minionIDs =
+    		new HashMap<RobotType, ArrayList<Integer>>(); // robots created and commanded by this EC
     static int buildIdx = 0;
     static RobotType[] buildQueue = {
     		spawnableRobot[0],
@@ -32,8 +40,7 @@ public strictfp class RobotPlayer {
     };
     static int prevVotes = 0; 
     static int bidInfluence = 1;
-
-
+    
     /**
      * run() is the method that is called when a robot is instantiated in the Battlecode world.
      * If this method returns, the robot dies!
@@ -48,6 +55,18 @@ public strictfp class RobotPlayer {
         turnCount = 0;
 
         System.out.println("I'm a " + rc.getType() + " and I just got created!");
+	    if (rc.getType() == RobotType.ENLIGHTENMENT_CENTER) {
+        	for (RobotType rt : RobotType.values()) {
+	        	minionIDs.put(rt, new ArrayList<Integer>());
+	        }
+	    } else { // Find EC that probably created this robot
+	        for (Direction dir : directions) {
+	            RobotInfo maybeEC = rc.senseRobotAtLocation(rc.adjacentLocation(dir));
+	            if (maybeEC != null && maybeEC.getType() == RobotType.ENLIGHTENMENT_CENTER) {
+	            	masterID = maybeEC.getID();
+	            }
+	        }
+	    }
         while (true) {
             turnCount += 1;
             // Try/catch blocks stop unhandled exceptions, which cause your robot to freeze
@@ -73,15 +92,30 @@ public strictfp class RobotPlayer {
     }
 
     static void runEnlightenmentCenter() throws GameActionException {
+    	// Prune minions, some may have been lost
+    	for (ArrayList<Integer> minionList : minionIDs.values()) {
+    		ArrayList<Integer> minionsCopy = new ArrayList<Integer>(minionList);
+    		for (int id : minionsCopy) {
+	    		try {
+	    			rc.senseRobot(id);
+	    		} catch (GameActionException gae) {
+	    			minionList.remove(Integer.valueOf(id));
+	    		}
+    		}
+    	}
+    	
         // Produce new robots
-    	RobotType toBuild = buildQueue[0];
+    	RobotType buildType = buildQueue[0];
         int influence = 50;
         for (Direction dir : directions) {
-        	toBuild = buildQueue[buildIdx];
-            if (rc.canBuildRobot(toBuild, dir, influence)) {
-                rc.buildRobot(toBuild, dir, influence);
+        	buildType = buildQueue[buildIdx];
+            if (rc.canBuildRobot(buildType, dir, influence)) {
+                rc.buildRobot(buildType, dir, influence);
+                // Add the newly built robot to the minions list
+                RobotInfo freshMinion = rc.senseRobotAtLocation(rc.adjacentLocation(dir));
+                minionIDs.get(buildType).add(freshMinion.getID());
                 buildIdx = (buildIdx + 1) % buildQueue.length;
-            	toBuild = buildQueue[buildIdx];
+                buildType = buildQueue[buildIdx];
             }
         }
         // Make bids for votes
