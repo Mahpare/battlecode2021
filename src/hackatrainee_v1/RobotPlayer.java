@@ -185,7 +185,11 @@ public strictfp class RobotPlayer {
     	}
     	if(getAway == true) {
     		//find ECs location, then move to the opposite direction!
-    		escapeFrom(EcLocation);
+    		Direction direct = escapeFromDirection(EcLocation);
+    		if (tryMove(direct)) {
+    			System.out.println("I moved!");
+    			return;
+    		}
     	}
     	
         Team enemy = rc.getTeam().opponent();
@@ -248,7 +252,7 @@ public strictfp class RobotPlayer {
         return directions[(int) (Math.random() * directions.length)];
     }
     
-    static Direction escapeFrom(MapLocation suspiciousPlace) {
+    static Direction escapeFromDirection(MapLocation suspiciousPlace) {
     	MapLocation source = rc.getLocation();
     	
     	if (source.equals(suspiciousPlace)) {
