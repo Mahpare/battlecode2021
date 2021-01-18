@@ -170,6 +170,24 @@ public strictfp class RobotPlayer {
     }
 
     static void runPolitician() throws GameActionException {
+    	//go away from base ECs
+    	Team team = rc.getTeam();
+    	int sensorRadius = rc.getType().sensorRadiusSquared;
+    	RobotInfo[] teammate = rc.senseNearbyRobots(sensorRadius, team);
+    	boolean getAway = false;
+    	MapLocation EcLocation = rc.getLocation();//just for initialization!
+    	for (RobotInfo r : teammate) {
+    		if (r.getType() == RobotType.ENLIGHTENMENT_CENTER) {
+    			getAway = true;
+    			EcLocation = r.getLocation();
+    			break;
+    		}
+    	}
+    	if(getAway == true) {
+    		//find ECs location, then move to the opposite direction!
+    		escapeFrom(EcLocation);
+    	}
+    	
         Team enemy = rc.getTeam().opponent();
         int actionRadius = rc.getType().actionRadiusSquared;
         RobotInfo[] attackable = rc.senseNearbyRobots(actionRadius, enemy);
@@ -228,6 +246,57 @@ public strictfp class RobotPlayer {
      */
     static Direction randomDirection() {
         return directions[(int) (Math.random() * directions.length)];
+    }
+    
+    static Direction escapeFrom(MapLocation suspiciousPlace) {
+    	MapLocation source = rc.getLocation();
+    	
+    	if (source.equals(suspiciousPlace)) {
+    		Direction direct= randomDirection();
+    		while (direct == Direction.CENTER)
+    			direct= randomDirection();
+    		return direct;
+    	}
+    		
+    	int xDiff = suspiciousPlace.x - source.x;
+    	int yDiff = suspiciousPlace.y - source.y;
+
+		//Vertical path
+		if(xDiff==0) { 
+			if(yDiff>0) {
+				return Direction.SOUTH;
+			}
+			else {//yDiff<0
+				return Direction.NORTH;
+			}		
+		}
+		
+		//Horizontal path
+		else if(yDiff==0) { 
+			if(xDiff>0) {
+				return Direction.WEST;
+			}
+			else {//xDiff<0
+				return Direction.EAST;
+			}		
+		}
+		
+		//diagonal path
+		else {
+			if(xDiff>0 && yDiff>0) {
+				return Direction.SOUTHWEST;
+			}
+			else if(xDiff>0 && yDiff<0) {
+				return Direction.NORTHWEST;
+			}
+			else if(xDiff<0 && yDiff>0) {
+				return Direction.SOUTHEAST;
+			}
+			else { //(xDiff<0 && yDiff<0) 
+				return Direction.NORTHEAST;
+			}
+		}
+    	
     }
     
     static Direction nonRandomDirection(MapLocation destination) {
