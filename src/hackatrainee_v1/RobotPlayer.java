@@ -62,10 +62,15 @@ public strictfp class RobotPlayer {
 	        }
 	    } else { // Find EC that probably created this robot
 	        for (Direction dir : directions) {
-	            RobotInfo maybeEC = rc.senseRobotAtLocation(rc.adjacentLocation(dir));
-	            if (maybeEC != null && maybeEC.getType() == RobotType.ENLIGHTENMENT_CENTER) {
-	            	masterID = maybeEC.getID();
-	            }
+	        	try {
+	        		RobotInfo maybeEC = rc.senseRobotAtLocation(rc.adjacentLocation(dir));
+		            if (maybeEC != null && maybeEC.getType() == RobotType.ENLIGHTENMENT_CENTER) {
+		            	masterID = maybeEC.getID();
+		            }
+	        	} catch (GameActionException e) {
+	        		// adjacent location not on the map
+	        		continue;
+	        	}
 	        }
 	    }
         while (true) {
