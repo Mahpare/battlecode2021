@@ -292,6 +292,7 @@ public strictfp class RobotPlayer {
     			FlagInfo fi = new FlagInfo();
     			fi.location = ri.getLocation();
     			fi.team = ri.getTeam();
+    			fi.conviction = 0; // TODO change this
     			rc.setFlag(fi.encoded());
     		}
     	}
