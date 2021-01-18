@@ -55,7 +55,7 @@ public class FlagInfo {
 		return result;
 	}
 	
-	private MapLocation getLocationFromFlag(int flag, MapLocation ownLocation) {
+	protected MapLocation getLocationFromFlag(int flag, MapLocation ownLocation) {
     	int y = flag % 128;
     	int x = (flag / 128) % 128;
     	int offsetX128 = ownLocation.x / 128;

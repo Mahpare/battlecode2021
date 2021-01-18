@@ -30,6 +30,9 @@ public strictfp class RobotPlayer {
     static int masterID = 0;
     static MapLocation destination;
     static int safeDistanceFromEcForSlanderer =16; //?
+
+    // Politicians and Muckrakers
+    static boolean attacking = false;
     
     // Enlightenment Center variables
     static HashMap<RobotType, ArrayList<Integer>> minionIDs =
@@ -58,7 +61,6 @@ public strictfp class RobotPlayer {
 
         turnCount = 0;
 
-        System.out.println("I'm a " + rc.getType() + " and I just got created!");
 	    if (rc.getType() == RobotType.ENLIGHTENMENT_CENTER) {
         	for (RobotType rt : RobotType.values()) {
 	        	minionIDs.put(rt, new ArrayList<Integer>());
@@ -82,7 +84,6 @@ public strictfp class RobotPlayer {
             try {
                 // Here, we've separated the controls into a different method for each RobotType.
                 // You may rewrite this into your own control structure if you wish.
-                System.out.println("I'm a " + rc.getType() + "! Location " + rc.getLocation());
                 switch (rc.getType()) {
                     case ENLIGHTENMENT_CENTER: runEnlightenmentCenter(); break;
                     case POLITICIAN:           runPolitician();          break;
@@ -106,34 +107,49 @@ public strictfp class RobotPlayer {
     		ArrayList<Integer> minionsCopy = new ArrayList<Integer>(minionList);
     		for (int id : minionsCopy) {
 	    		try {
-	    			RobotInfo minion = rc.senseRobot(id);
-	    			if (minion.getTeam() != rc.getTeam()) {  // remote possibility of same ID occurring again?
+	    			if (!rc.canGetFlag(id)) {
 	    				throw new GameActionException(null, null);
 	    			}
 	    		} catch (GameActionException e) {
+	    			System.out.println("Removing minion " + id);
 	    			minionList.remove(Integer.valueOf(id));
 	    		}
     		}
     	}
     	
     	// Get flag info from remaining minions
+    	System.out.println("Printing list sizes");
     	for (ArrayList<Integer> minionList : minionIDs.values()) {
+        	System.out.println("Total minions in this list: " + minionList.size());
     		for (int id : minionList) {
     			try {
     				int flagInt = rc.getFlag(id);
-    				FlagInfo fi = new FlagInfo();
-    				fi.setFromEncoded(flagInt, rc.getLocation(), rc.getTeam());
-    				if (fi.signaling) {
-    					MapLocation location = fi.location;
-    					Team team = fi.team;
-    					int conviction = fi.conviction;
-    					knownECs.put(location, new ECInfo(location, team, conviction));
-    					System.out.println(knownECs.size());
+//    				System.out.println("minion of type " +
+//    						rc.senseRobot(id).getType() + " with ID " + id +
+//    						" has flag " + rc.getFlag(id));
+    				if (flagInt != 0) {
+	    				FlagInfo fi = new FlagInfo();
+	    				fi.setFromEncoded(flagInt, rc.getLocation(), rc.getTeam());
+	    				if (fi.signaling) {
+	    					MapLocation location = fi.location;
+	    					Team team = fi.team;
+	    					int conviction = fi.conviction;
+	    					knownECs.put(location, new ECInfo(location, team, conviction));
+	    					System.out.println("Added EC! Now known: " + knownECs.size());
+	    				}
     				}
     			} catch (GameActionException e) {
                     System.out.println(rc.getType() + " Exception");
                     e.printStackTrace();
     			}
+    		}
+    	}
+    	
+    	// Signal to attack EC
+    	for (ECInfo ec : knownECs.values()) {
+    		if (ec.team == Team.NEUTRAL) {
+    			System.out.println("SIGNALING TO ATTACK!");
+    			signalAttackEC(ec);
     		}
     	}
     	
@@ -171,26 +187,38 @@ public strictfp class RobotPlayer {
     }
 
     static void runPolitician() throws GameActionException {
-    	//go away from base ECs
-    	Team team = rc.getTeam();
-    	int sensorRadius = rc.getType().sensorRadiusSquared;
-    	RobotInfo[] teammate = rc.senseNearbyRobots(sensorRadius, team);
-    	boolean getAway = false;
-    	MapLocation EcLocation = rc.getLocation();//just for initialization!
-    	for (RobotInfo r : teammate) {
-    		if (r.getType() == RobotType.ENLIGHTENMENT_CENTER) {
-    			getAway = true;
-    			EcLocation = r.getLocation();
-    			break;
-    		}
-    	}
-    	if(getAway == true) {
-    		//find ECs location, then move to the opposite direction!
-    		Direction direct = escapeFromDirection(EcLocation);
-    		if (tryMove(direct)) {
-    			System.out.println("I moved!");
-    			return;
-    		}
+    	maybeSendECLocation();
+    	
+    	// Check signal, should we be attacking?
+    	int flagInt = rc.getFlag(masterID);
+    	FlagInfoEC fi = new FlagInfoEC();
+    	fi.setFromEncoded(flagInt, rc.getLocation(), rc.getTeam());
+    	if (fi.attack) {
+    		attacking = true;
+    		destination = fi.location;
+    	} else {
+    	
+	    	//go away from base ECs
+	    	Team team = rc.getTeam();
+	    	int sensorRadius = rc.getType().sensorRadiusSquared;
+	    	RobotInfo[] teammate = rc.senseNearbyRobots(sensorRadius, team);
+	    	boolean getAway = false;
+	    	MapLocation EcLocation = rc.getLocation();//just for initialization!
+	    	for (RobotInfo r : teammate) {
+	    		if (r.getType() == RobotType.ENLIGHTENMENT_CENTER) {
+	    			getAway = true;
+	    			EcLocation = r.getLocation();
+	    			break;
+	    		}
+	    	}
+	    	if(getAway == true) {
+	    		//find ECs location, then move to the opposite direction!
+	    		Direction direct = escapeFromDirection(EcLocation);
+	    		if (tryMove(direct)) {
+	    			System.out.println("I moved!");
+	    			return;
+	    		}
+	    	}
     	}
     	
         Team enemy = rc.getTeam().opponent();
@@ -208,16 +236,15 @@ public strictfp class RobotPlayer {
         	tryAttack = true;
         } 
     	if (tryAttack && rc.canEmpower(actionRadius)) {
-    		System.out.println("empowering...");
             rc.empower(actionRadius);
             System.out.println("empowered");
             return;
         }
-        if (tryMove(randomDirection()))
-            System.out.println("I moved!");
+        tryMove(nonRandomDirection(destination));
     }
 
     static void runSlanderer() throws GameActionException {
+    	maybeSendECLocation();
     	//keep a distance from our ECs
     	Team team = rc.getTeam();
     	int sensorRadius = rc.getType().sensorRadiusSquared;
@@ -244,24 +271,24 @@ public strictfp class RobotPlayer {
     			return;
     		}
     	}
-    	//escape from Muckrarers
-    	
+    	//escape from Muckrakers
     	
     	//go toward our other Slanderers
     	
     	if (tryMove(randomDirection()))
             System.out.println("I moved!");
     	//all Slanderers move to right now!
-    	/***
-    	MapLocation current = rc.getLocation();
-    	int newX = current.x +3;
-    	int newY = current.y ;
-    	MapLocation dest = new MapLocation(newX,newY);
-        if (tryMove(nonRandomDirection(dest)))
-            System.out.println("I moved!");*/
+//    	MapLocation current = rc.getLocation();
+//    	int newX = current.x +3;
+//    	int newY = current.y ;
+//    	MapLocation dest = new MapLocation(newX,newY);
+//    	
+//        if (tryMove(nonRandomDirection(dest)))
+//            System.out.println("I moved!");*/
     }
 
     static void runMuckraker() throws GameActionException {
+    	maybeSendECLocation();
         Team enemy = rc.getTeam().opponent();
         int actionRadius = rc.getType().actionRadiusSquared;
         for (RobotInfo robot : rc.senseNearbyRobots(actionRadius, enemy)) {
@@ -274,8 +301,7 @@ public strictfp class RobotPlayer {
                 }
             }
         }
-        if (tryMove(randomDirection()))
-            System.out.println("I moved!");
+        tryMove(nonRandomDirection(destination));
     }
 
     /**
@@ -339,6 +365,9 @@ public strictfp class RobotPlayer {
     }
     
     static Direction nonRandomDirection(MapLocation destination) {
+    	if (destination == null) {
+    		return randomDirection();
+    	}
     	MapLocation source = rc.getLocation();
     	
     	if (source.equals(destination))
@@ -348,7 +377,7 @@ public strictfp class RobotPlayer {
     	int yDiff = destination.y - source.y;
 
 		//Vertical path
-		if(xDiff==0) { 
+		if(xDiff==0) {
 			if(yDiff>0) {
 				return Direction.NORTH;
 			}
@@ -382,7 +411,6 @@ public strictfp class RobotPlayer {
 				return Direction.SOUTHWEST;
 			}
 		}
-
     }
 
     /**
@@ -393,7 +421,7 @@ public strictfp class RobotPlayer {
      * @throws GameActionException
      */
     static boolean tryMove(Direction dir) throws GameActionException {
-        System.out.println("I am trying to move " + dir + "; " + rc.isReady() + " " + rc.getCooldownTurns() + " " + rc.canMove(dir));
+//        System.out.println("I am trying to move " + dir + "; " + rc.isReady() + " " + rc.getCooldownTurns() + " " + rc.canMove(dir));
         if (rc.canMove(dir)) {
             rc.move(dir);
             return true;
@@ -403,13 +431,21 @@ public strictfp class RobotPlayer {
     static void maybeSendECLocation() throws GameActionException {
     	RobotInfo[] nearbyBots = rc.senseNearbyRobots();
     	for (RobotInfo ri : nearbyBots) {
-    		if (ri.getType() == RobotType.ENLIGHTENMENT_CENTER) {
+    		if (ri.getType() == RobotType.ENLIGHTENMENT_CENTER && ri.getTeam() != rc.getTeam()) {
     			FlagInfo fi = new FlagInfo();
     			fi.location = ri.getLocation();
     			fi.team = ri.getTeam();
-    			fi.conviction = ri.getConviction(); // TODO change this
+    			fi.conviction = ri.getConviction();
+    			System.out.println("Setting flag to " + fi.encoded());
     			rc.setFlag(fi.encoded());
     		}
     	}
+    }
+    
+    static void signalAttackEC(ECInfo ec) throws GameActionException {
+    	FlagInfoEC fi = new FlagInfoEC();
+    	fi.location = ec.location;
+    	fi.attack = true;
+    	rc.setFlag(fi.encoded());
     }
 }
