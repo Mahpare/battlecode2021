@@ -216,6 +216,190 @@ public strictfp class RobotPlayer {
     static Direction randomDirection() {
         return directions[(int) (Math.random() * directions.length)];
     }
+    
+    
+    static Direction[] basePathFinding(MapLocation source, MapLocation destination) {
+    	Direction[] noMove = new Direction[] {Direction.CENTER};
+    	
+    	if (source.equals(destination))
+    		return noMove;
+    		//return [Direction.CENTER];
+    	
+    	int xDiff = destination.x - source.x;
+    	int yDiff = destination.y - source.y;
+    	double diffSquared = Math.pow(xDiff, 2) + Math.pow(yDiff, 2);
+    	
+    	int sensorSquared = rc.getType().sensorRadiusSquared;
+    	int sensorR = (int)(Math.sqrt(sensorSquared));
+    	
+    	// if the destination is in the sensorRadiusSquared of the robot    	
+    	if  (diffSquared <= sensorSquared) {
+    		return findShortestPath(source, destination);// to do
+    	}
+    	
+    	// The destination is outside the robot's sensor range 
+    	else {
+    		//Vertical path
+    		if(xDiff==0) { 
+    			int stepCounter = sensorR -1;
+    			if(yDiff>0) {
+    				return createDirectPath(stepCounter, Direction.NORTH);
+    			}
+    			else {//yDiff<0
+    				return createDirectPath(stepCounter, Direction.SOUTH);
+    			}		
+    		}
+    		
+    		//Horizontal path
+    		else if(yDiff==0) { 
+    			int stepCounter = sensorR -1;
+    			if(xDiff>0) {
+    				return createDirectPath(stepCounter, Direction.EAST);
+    			}
+    			else {//xDiff<0
+    				return createDirectPath(stepCounter, Direction.WEST);
+    			}		
+    		}
+    		
+    		// (semi)-diagonal path
+    		// Find a new reachable destination inside robot's sensing radius
+    		else { 
+    		
+    			if (Math.abs(xDiff) <= sensorR) {
+    				double remainer = sensorSquared - Math.pow(xDiff, 2);
+    				int newYdiff = (int)(Math.sqrt(remainer)); // negative or positive
+    				
+    				newYdiff = ((yDiff>0) ? newYdiff : (newYdiff*-1));
+    				
+    				int newY = source.y + newYdiff;
+    				int newX = source.x + xDiff;
+    				MapLocation newDestination = new MapLocation(newX, newY);
+    				return findShortestPath(source, newDestination);// to do
+    			}
+    			
+    			else if(Math.abs(yDiff) <= sensorR) {
+    				double remainer = sensorSquared - Math.pow(yDiff, 2);
+    				int newXdiff = (int)(Math.sqrt(remainer)); // negative or positive
+    				
+    				newXdiff = ((xDiff>0) ? newXdiff : (newXdiff*-1));
+    				
+    				int newX = source.x + newXdiff;
+    				int newY = source.y + yDiff;
+    				MapLocation newDestination = new MapLocation(newX, newY);
+    				return findShortestPath(source, newDestination);// to do
+    			}
+    			
+    			else {
+    				int newXdiff = ((xDiff>0) ? sensorR : (sensorR*-1));
+    				int newYdiff = ((yDiff>0) ? sensorR : (sensorR*-1));
+    				int newX = source.x + newXdiff;
+    				int newY = source.y + newYdiff;
+    				MapLocation newDestination = new MapLocation(newX, newY);
+    				return findShortestPath(source, newDestination);// to do
+    			}
+    		}
+    	}
+    			
+    }
+    
+    static Direction[] createDirectPath(int stepCounter, Direction direct) {
+    	Direction[] tempDirection = new Direction[stepCounter];
+    	for(int i=0; i<stepCounter; i++)
+    		tempDirection[i] = direct;
+    	return tempDirection; 	
+    }
+    
+    static Direction[] findShortestPath(MapLocation source, MapLocation destination) {
+    	//simple!
+    	Direction[] noMove = new Direction[] {Direction.CENTER};
+    	
+    	if (source.equals(destination))
+        		return noMove;
+    	
+    	
+    	int xDiff = destination.x - source.x;
+    	int yDiff = destination.y - source.y;
+
+    	//Vertical path
+		if(xDiff==0) { 
+			int stepCounter = Math.abs(yDiff);
+			if(yDiff>0) {
+				return createDirectPath(stepCounter, Direction.NORTH);
+			}
+			else {//yDiff<0
+				return createDirectPath(stepCounter, Direction.SOUTH);
+			}		
+		}
+		
+		//Horizontal path
+		else if(yDiff==0) { 
+			int stepCounter = Math.abs(xDiff);
+			if(xDiff>0) {
+				return createDirectPath(stepCounter, Direction.EAST);
+			}
+			else {//xDiff<0
+				return createDirectPath(stepCounter, Direction.WEST);
+			}		
+		}
+		
+		// (semi)-diagonal path
+		//Direction[] tempDirection = new Direction[stepCounter];
+		else {
+			if(xDiff>0 && yDiff>0) {
+				int stepCounter = Math.min(xDiff, yDiff);
+				Direction[] tempDirection1st = createDirectPath(stepCounter, Direction.NORTHEAST);
+				
+				int newX = source.x + stepCounter;
+				int newY = source.y + stepCounter;
+				MapLocation newSource = new MapLocation(newX, newY);
+				Direction[] tempDirection2nd = findShortestPath(newSource, destination);// to do
+				return concatenateDirection(tempDirection1st ,tempDirection2nd);
+			}
+			else if(xDiff>0 && yDiff<0) {
+				int stepCounter = Math.min(xDiff, Math.abs(yDiff));
+				Direction[] tempDirection1st = createDirectPath(stepCounter, Direction.SOUTHEAST);
+				
+				int newX = source.x + stepCounter;
+				int newY = source.y - stepCounter;
+				MapLocation newSource = new MapLocation(newX, newY);
+				Direction[] tempDirection2nd = findShortestPath(newSource, destination);// to do
+				return concatenateDirection(tempDirection1st ,tempDirection2nd);
+			}
+			else if(xDiff<0 && yDiff>0) {
+				int stepCounter = Math.min(Math.abs(xDiff), Math.abs(yDiff));
+				Direction[] tempDirection1st = createDirectPath(stepCounter, Direction.NORTHWEST);
+				
+				int newX = source.x - stepCounter;
+				int newY = source.y + stepCounter;
+				MapLocation newSource = new MapLocation(newX, newY);
+				Direction[] tempDirection2nd = findShortestPath(newSource, destination);// to do
+				return concatenateDirection(tempDirection1st ,tempDirection2nd);
+			}
+			else { //(xDiff<0 && yDiff<0) 
+				int stepCounter = Math.min(Math.abs(xDiff), Math.abs(yDiff));
+				Direction[] tempDirection1st = createDirectPath(stepCounter, Direction.SOUTHWEST);
+				
+				int newX = source.x - stepCounter;
+				int newY = source.y - stepCounter;
+				MapLocation newSource = new MapLocation(newX, newY);
+				Direction[] tempDirection2nd = findShortestPath(newSource, destination);// to do
+				return concatenateDirection(tempDirection1st ,tempDirection2nd);
+			}
+		}
+
+    }
+    
+    static Direction[] concatenateDirection(Direction[] a, Direction[] b) {
+        int aLen = a.length;
+        int bLen = b.length;
+
+        Direction[] c = new Direction[aLen + bLen];
+        System.arraycopy(a, 0, c, 0, aLen);
+        System.arraycopy(b, 0, c, aLen, bLen);
+
+        return c;
+    }
+    
 
     /**
      * Attempts to move in a given direction.

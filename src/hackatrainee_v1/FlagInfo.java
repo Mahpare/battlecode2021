@@ -11,7 +11,7 @@ public class FlagInfo {
 	public FlagInfo() {}
 	
 	public void setFromEncoded(int encodedInfo, MapLocation ownLocation, Team ownTeam) {
-		if Util.getBit(encodedInfo, 23) {
+		if (Util.getBit(encodedInfo, 23)) {
 			signaling = true;
 		}
 		location = getLocationFromFlag(encodedInfo, ownLocation);
