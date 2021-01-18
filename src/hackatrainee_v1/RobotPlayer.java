@@ -42,6 +42,7 @@ public strictfp class RobotPlayer {
     static HashMap<MapLocation, ECInfo> knownECs = new HashMap<MapLocation, ECInfo>();
     static int prevVotes = 0; 
     static int bidInfluence = 1;
+    static boolean didBid = false;
     
     /**
      * run() is the method that is called when a robot is instantiated in the Battlecode world.
@@ -124,7 +125,8 @@ public strictfp class RobotPlayer {
     				if (fi.signaling) {
     					MapLocation location = fi.location;
     					Team team = fi.team;
-    					knownECs.put(location, new ECInfo(location, team));
+    					int conviction = fi.conviction;
+    					knownECs.put(location, new ECInfo(location, team, conviction));
     					System.out.println(knownECs.size());
     				}
     			} catch (GameActionException e) {
@@ -150,15 +152,20 @@ public strictfp class RobotPlayer {
         }
         // Make bids for votes
         int currentVotes = rc.getTeamVotes();
-        if (currentVotes == prevVotes) { // We did not win the vote
-        	bidInfluence += 1;
-        } else {
-        	bidInfluence = Math.max(1, bidInfluence - 1);
+        if (didBid) {
+        	if (currentVotes == prevVotes) { // We did not win the vote
+        		bidInfluence *= 1.5; // Increase vote price
+        	} else {
+        		bidInfluence = Math.max(2, 3 * bidInfluence / 4); // Decrease vote price
+        	}
         }
         prevVotes = currentVotes;
         int currentInfluence = rc.getInfluence();
-        if (bidInfluence < currentInfluence) {
+        if (bidInfluence < currentInfluence / 5) { // At most bid 20% of remaining influence
         	rc.bid(bidInfluence);
+        	didBid = true;
+        } else {
+        	didBid = false;
         }
     }
 
@@ -292,7 +299,7 @@ public strictfp class RobotPlayer {
     			FlagInfo fi = new FlagInfo();
     			fi.location = ri.getLocation();
     			fi.team = ri.getTeam();
-    			fi.conviction = 0; // TODO change this
+    			fi.conviction = ri.getConviction(); // TODO change this
     			rc.setFlag(fi.encoded());
     		}
     	}
