@@ -70,3 +70,39 @@ Start in economic mode, with first one muckraker to find the enemy base and dest
   1. Update flag
   2. Move towards the muckraker
   3. Speech
+
+## Flag communications
+
+Each robot has a 24-bit flag. Robots can see each others' flags if they are in sensor range, and EC's can query the flag of a robot whose ID they have and vice versa.
+
+We use the bits as follows:
+
+```
+0  - Signaling=1, Not signaling=0  (rest of bits should also be 0)
+1
+2
+3
+4
+5
+6
+7
+8  - Team Neutral = 1
+9  - Team A = 0, Team B = 1
+10 - Bits up to 24: location information
+11   encoded by 128 * (x % 128) + (y % 128)
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+```
+
+Information is sent using the `sendLocation` method, passing the location to communicate and extra information. Extra information is passed into `sendLocation` as a 10-bit number (at most 1024).

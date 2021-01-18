@@ -38,6 +38,7 @@ public strictfp class RobotPlayer {
     		spawnableRobot[1],
     		spawnableRobot[2]
     };
+    static ArrayList<ECInfo> knownECs = new ArrayList<ECInfo>();
     static int prevVotes = 0; 
     static int bidInfluence = 1;
     
@@ -97,10 +98,32 @@ public strictfp class RobotPlayer {
     		ArrayList<Integer> minionsCopy = new ArrayList<Integer>(minionList);
     		for (int id : minionsCopy) {
 	    		try {
-	    			rc.senseRobot(id);
-	    		} catch (GameActionException gae) {
+	    			RobotInfo minion = rc.senseRobot(id);
+	    			if (minion.getTeam() != rc.getTeam()) {  // remote possibility of same ID occurring again?
+	    				throw new GameActionException(null, null);
+	    			}
+	    		} catch (GameActionException e) {
 	    			minionList.remove(Integer.valueOf(id));
 	    		}
+    		}
+    	}
+    	
+    	// Get flag info from remaining minions
+    	for (ArrayList<Integer> minionList : minionIDs.values()) {
+    		for (int id : minionList) {
+    			try {
+    				int flagInt = rc.getFlag(id);
+    				FlagInfo fi = new FlagInfo();
+    				fi.setFromEncoded(flagInt, rc.getLocation(), rc.getTeam());
+    				if (fi.signaling) {
+    					MapLocation location = fi.location;
+    					Team team = fi.team;
+    					knownECs.add(new ECInfo(location, team));
+    				}
+    			} catch (GameActionException e) {
+                    System.out.println(rc.getType() + " Exception");
+                    e.printStackTrace();
+    			}
     		}
     	}
     	
@@ -201,5 +224,17 @@ public strictfp class RobotPlayer {
             rc.move(dir);
             return true;
         } else return false;
+    }
+    
+    static void maybeSendECLocation() throws GameActionException {
+    	RobotInfo[] nearbyBots = rc.senseNearbyRobots();
+    	for (RobotInfo ri : nearbyBots) {
+    		if (ri.getType() == RobotType.ENLIGHTENMENT_CENTER) {
+    			FlagInfo fi = new FlagInfo();
+    			fi.location = ri.getLocation();
+    			fi.team = ri.getTeam();
+    			rc.setFlag(fi.encoded());
+    		}
+    	}
     }
 }
