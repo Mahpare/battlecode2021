@@ -38,7 +38,7 @@ public strictfp class RobotPlayer {
     		spawnableRobot[1],
     		spawnableRobot[2]
     };
-    static ArrayList<ECInfo> knownECs = new ArrayList<ECInfo>();
+    static HashMap<MapLocation, ECInfo> knownECs = new HashMap<MapLocation, ECInfo>();
     static int prevVotes = 0; 
     static int bidInfluence = 1;
     
@@ -123,7 +123,8 @@ public strictfp class RobotPlayer {
     				if (fi.signaling) {
     					MapLocation location = fi.location;
     					Team team = fi.team;
-    					knownECs.add(new ECInfo(location, team));
+    					knownECs.put(location, new ECInfo(location, team));
+    					System.out.println(knownECs.size());
     				}
     			} catch (GameActionException e) {
                     System.out.println(rc.getType() + " Exception");
@@ -151,7 +152,7 @@ public strictfp class RobotPlayer {
         if (currentVotes == prevVotes) { // We did not win the vote
         	bidInfluence += 1;
         } else {
-        	bidInfluence -= 1;
+        	bidInfluence = Math.max(1, bidInfluence - 1);
         }
         prevVotes = currentVotes;
         int currentInfluence = rc.getInfluence();
