@@ -78,18 +78,23 @@ Each robot has a 24-bit flag. Robots can see each others' flags if they are in s
 We use the bits as follows:
 
 ```
+// "Extra information" (non-location)
+
 0  - Signaling=1, Not signaling=0  (rest of bits should also be 0)
 1
 2
 3
 4
 5
-6
-7
+6  - Bits 6-7: conviction of target EC
+7    4 possible values; 0, 80, 200, 500 or more
 8  - Team Neutral = 1
 9  - Team A = 0, Team B = 1
-10 - Bits up to 24: location information
-11   encoded by 128 * (x % 128) + (y % 128)
+
+// Location follows
+
+10 - Bits up to 23: 14 bits of location information
+11   encoded by 128 * (x % 128) + (y % 128)   
 12
 13
 14
@@ -102,7 +107,6 @@ We use the bits as follows:
 21
 22
 23
-24
 ```
 
 Information is sent using the `sendLocation` method, passing the location to communicate and extra information. Extra information is passed into `sendLocation` as a 10-bit number (at most 1024).
