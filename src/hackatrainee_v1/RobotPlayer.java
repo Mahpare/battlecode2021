@@ -272,7 +272,25 @@ public strictfp class RobotPlayer {
     		}
     	}
     	//escape from Muckrakers
-    	
+    	Team enemy = rc.getTeam().opponent();
+    	RobotInfo[] enemies = rc.senseNearbyRobots(sensorRadius, enemy);
+     	getAway = false;
+     	MapLocation muckrakerLocation = rc.getLocation();//just for initialization!
+    	for (RobotInfo r : enemies) {
+    		if (r.getType() == RobotType.MUCKRAKER) {
+    			getAway = true;
+    			muckrakerLocation = r.getLocation();
+    			break;
+    		}
+    	}
+    	if(getAway == true) {
+    		//find muckrakerLocation, then move to the opposite direction!
+    		Direction direct = escapeFromDirection(muckrakerLocation);
+    		if (tryMove(direct)) {
+    			System.out.println("I moved!");
+    			return;
+    		}
+    	}    	
     	//go toward our other Slanderers
     	
     	if (tryMove(randomDirection()))
@@ -412,7 +430,293 @@ public strictfp class RobotPlayer {
 			}
 		}
     }
+    
+    static Direction findEmptyDirection(Direction occupiedDirection) {
+    	double coin = Math.random();
+    	MapLocation current = rc.getLocation();
+    	
+    	if(occupiedDirection == Direction.NORTHEAST) {
+    		MapLocation north = current.add(Direction.NORTH);
+    		MapLocation east = current.add(Direction.EAST);
+    		
+    		if(rc.isLocationOccupied(north) && rc.isLocationOccupied(east)) {
+    			Direction direct= randomDirection();
+        		while (direct == Direction.NORTHEAST || direct == Direction.NORTH || direct == Direction.EAST)
+        			direct= randomDirection();
+        		return direct;
+    		}
+    		
+    		else if(rc.isLocationOccupied(north) && !rc.isLocationOccupied(east)) { 
+    			return Direction.EAST;
+    		}
+    		
+    		else if(!rc.isLocationOccupied(north) && rc.isLocationOccupied(east)) { 
+    			return Direction.NORTH;
+    		}
+    		
+    		else { //both directions are empty
+    			double nPass = rc.sensePassability(north);
+        		double ePass = rc.sensePassability(east);
+        		if(nPass > ePass) //nPass in better
+        			return Direction.NORTH;
+        		else if (nPass < ePass)
+        			return Direction.EAST;
+        		else { //nPass == ePass -> add some randomness
+        			if(coin <0.5)
+            			return Direction.NORTH;
+            		else
+            			return Direction.EAST;
+        		}
+    		}
+    	}
+    	
+    	else if(occupiedDirection == Direction.NORTHWEST) {
+    		MapLocation north = current.add(Direction.NORTH);
+    		MapLocation west = current.add(Direction.WEST);
+    		
+    		if(rc.isLocationOccupied(north) && rc.isLocationOccupied(west)) {
+    			Direction direct= randomDirection();
+        		while (direct == Direction.NORTHWEST || direct == Direction.NORTH || direct == Direction.WEST)
+        			direct= randomDirection();
+        		return direct;
+    		}
+    		
+    		else if(rc.isLocationOccupied(north) && !rc.isLocationOccupied(west)) { 
+    			return Direction.WEST;
+    		}
+    		
+    		else if(!rc.isLocationOccupied(north) && rc.isLocationOccupied(west)) { 
+    			return Direction.NORTH;
+    		}
+    		
+    		else { //both directions are empty
+    			double nPass = rc.sensePassability(north);
+        		double wPass = rc.sensePassability(west);
+        		if(nPass > wPass) //nPass in better
+        			return Direction.NORTH;
+        		else if (nPass < wPass)
+        			return Direction.WEST;
+        		else { //nPass == ePass -> add some randomness
+        			if(coin <0.5)
+            			return Direction.NORTH;
+            		else
+            			return Direction.WEST;
+        		}
+    		}
+    	}
+    	
+    	else if(occupiedDirection == Direction.SOUTHEAST) {
+    		MapLocation south = current.add(Direction.SOUTH);
+    		MapLocation east = current.add(Direction.EAST);
+    		
+    		if(rc.isLocationOccupied(south) && rc.isLocationOccupied(east)) {
+    			Direction direct= randomDirection();
+        		while (direct == Direction.SOUTHEAST || direct == Direction.SOUTH || direct == Direction.EAST)
+        			direct= randomDirection();
+        		return direct;
+    		}
+    		
+    		else if(rc.isLocationOccupied(south) && !rc.isLocationOccupied(east)) { 
+    			return Direction.EAST;
+    		}
+    		
+    		else if(!rc.isLocationOccupied(south) && rc.isLocationOccupied(east)) { 
+    			return Direction.SOUTH;
+    		}
+    		
+    		else { //both directions are empty
+    			double sPass = rc.sensePassability(south);
+        		double ePass = rc.sensePassability(east);
+        		if(sPass > ePass) //nPass in better
+        			return Direction.SOUTH;
+        		else if (sPass < ePass)
+        			return Direction.EAST;
+        		else { //nPass == ePass -> add some randomness
+        			if(coin <0.5)
+            			return Direction.SOUTH;
+            		else
+            			return Direction.EAST;
+        		}
+    		}
+    	}    	
+    	
+    	else if(occupiedDirection == Direction.SOUTHWEST) {
+    		MapLocation south = current.add(Direction.SOUTH);
+    		MapLocation west = current.add(Direction.WEST);
+    		
+    		if(rc.isLocationOccupied(south) && rc.isLocationOccupied(west)) {
+    			Direction direct= randomDirection();
+        		while (direct == Direction.SOUTHWEST || direct == Direction.SOUTH || direct == Direction.WEST)
+        			direct= randomDirection();
+        		return direct;
+    		}
+    		
+    		else if(rc.isLocationOccupied(south) && !rc.isLocationOccupied(west)) { 
+    			return Direction.WEST;
+    		}
+    		
+    		else if(!rc.isLocationOccupied(south) && rc.isLocationOccupied(west)) { 
+    			return Direction.SOUTH;
+    		}
+    		
+    		else { //both directions are empty
+    			double sPass = rc.sensePassability(south);
+        		double wPass = rc.sensePassability(west);
+        		if(sPass > wPass) //nPass in better
+        			return Direction.SOUTH;
+        		else if (sPass < wPass)
+        			return Direction.WEST;
+        		else { //nPass == ePass -> add some randomness
+        			if(coin <0.5)
+            			return Direction.SOUTH;
+            		else
+            			return Direction.WEST;
+        		}
+    		}
+    	}
+    	/////////////
+    	
+    	else if(occupiedDirection == Direction.SOUTH) {
+    		MapLocation southE = current.add(Direction.SOUTHEAST);
+    		MapLocation southW = current.add(Direction.SOUTHWEST);
+    		
+    		if(rc.isLocationOccupied(southE) && rc.isLocationOccupied(southW)) {
+    			Direction direct= randomDirection();
+        		while (direct == Direction.SOUTH || direct == Direction.SOUTHEAST || direct == Direction.SOUTHWEST)
+        			direct= randomDirection();
+        		return direct;
+    		}
+    		
+    		else if(rc.isLocationOccupied(southE) && !rc.isLocationOccupied(southW)) { 
+    			return Direction.SOUTHWEST;
+    		}
+    		
+    		else if(!rc.isLocationOccupied(southE) && rc.isLocationOccupied(southW)) { 
+    			return Direction.SOUTHEAST;
+    		}
+    		
+    		else { //both directions are empty
+    			double ePass = rc.sensePassability(southE);
+        		double wPass = rc.sensePassability(southW);
+        		if(ePass > wPass) //nPass in better
+        			return Direction.SOUTHEAST;
+        		else if (ePass < wPass)
+        			return Direction.SOUTHWEST;
+        		else { //nPass == ePass -> add some randomness
+        			if(coin <0.5)
+            			return Direction.SOUTHEAST;
+            		else
+            			return Direction.SOUTHWEST;
+        		}
+    		}
+    	}    
+    	
+    	else if(occupiedDirection == Direction.NORTH) {
+    		MapLocation northE = current.add(Direction.NORTHEAST);
+    		MapLocation northW = current.add(Direction.NORTHWEST);
+    		
+    		if(rc.isLocationOccupied(northE) && rc.isLocationOccupied(northW)) {
+    			Direction direct= randomDirection();
+        		while (direct == Direction.NORTH || direct == Direction.NORTHEAST || direct == Direction.NORTHWEST)
+        			direct= randomDirection();
+        		return direct;
+    		}
+    		
+    		else if(rc.isLocationOccupied(northE) && !rc.isLocationOccupied(northW)) { 
+    			return Direction.NORTHWEST;
+    		}
+    		
+    		else if(!rc.isLocationOccupied(northE) && rc.isLocationOccupied(northW)) { 
+    			return Direction.NORTHEAST;
+    		}
+    		
+    		else { //both directions are empty
+    			double ePass = rc.sensePassability(northE);
+        		double wPass = rc.sensePassability(northW);
+        		if(ePass > wPass) //nPass in better
+        			return Direction.NORTHEAST;
+        		else if (ePass < wPass)
+        			return Direction.NORTHWEST;
+        		else { //nPass == ePass -> add some randomness
+        			if(coin <0.5)
+            			return Direction.NORTHEAST;
+            		else
+            			return Direction.NORTHWEST;
+        		}
+    		}
+    	}  
+    	else if(occupiedDirection == Direction.EAST) {
+    		MapLocation northE = current.add(Direction.NORTHEAST);
+    		MapLocation southE = current.add(Direction.SOUTHEAST);
+    		
+    		if(rc.isLocationOccupied(northE) && rc.isLocationOccupied(southE)) {
+    			Direction direct= randomDirection();
+        		while (direct == Direction.EAST || direct == Direction.NORTHEAST || direct == Direction.SOUTHEAST)
+        			direct= randomDirection();
+        		return direct;
+    		}
+    		
+    		else if(rc.isLocationOccupied(northE) && !rc.isLocationOccupied(southE)) { 
+    			return Direction.SOUTHEAST;
+    		}
+    		
+    		else if(!rc.isLocationOccupied(northE) && rc.isLocationOccupied(southE)) { 
+    			return Direction.NORTHEAST;
+    		}
+    		
+    		else { //both directions are empty
+    			double ePass = rc.sensePassability(northE);
+        		double wPass = rc.sensePassability(southE);
+        		if(ePass > wPass) //nPass in better
+        			return Direction.NORTHEAST;
+        		else if (ePass < wPass)
+        			return Direction.SOUTHEAST;
+        		else { //nPass == ePass -> add some randomness
+        			if(coin <0.5)
+            			return Direction.NORTHEAST;
+            		else
+            			return Direction.SOUTHEAST;
+        		}
+    		}
+    	} 
+    	else { //(occupiedDirection == Direction.WEST)
+    		MapLocation northE = current.add(Direction.NORTHWEST);
+    		MapLocation southE = current.add(Direction.SOUTHWEST);
+    		
+    		if(rc.isLocationOccupied(northE) && rc.isLocationOccupied(southE)) {
+    			Direction direct= randomDirection();
+        		while (direct == Direction.WEST || direct == Direction.NORTHWEST || direct == Direction.SOUTHWEST)
+        			direct= randomDirection();
+        		return direct;
+    		}
+    		
+    		else if(rc.isLocationOccupied(northE) && !rc.isLocationOccupied(southE)) { 
+    			return Direction.SOUTHWEST;
+    		}
+    		
+    		else if(!rc.isLocationOccupied(northE) && rc.isLocationOccupied(southE)) { 
+    			return Direction.NORTHWEST;
+    		}
+    		
+    		else { //both directions are empty
+    			double ePass = rc.sensePassability(northE);
+        		double wPass = rc.sensePassability(southE);
+        		if(ePass > wPass) //nPass in better
+        			return Direction.NORTHWEST;
+        		else if (ePass < wPass)
+        			return Direction.SOUTHWEST;
+        		else { //nPass == ePass -> add some randomness
+        			if(coin <0.5)
+            			return Direction.NORTHWEST;
+            		else
+            			return Direction.SOUTHWEST;
+        		}
+    		}
+    	} 
+    }
 
+   
+    
     /**
      * Attempts to move in a given direction.
      *
