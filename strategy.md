@@ -71,19 +71,38 @@ Start in economic mode, with first one muckraker to find the enemy base and dest
   2. Move towards the muckraker
   3. Speech
 
+## Pathfinding
+
+Every Robot moves by setting a destination and then calculating a Direction based on it. As robots move they store information about their surroundings in a map, and assuming some passability (1?) of unseen tiles they calculate a shortest path with the A*-algorithm.
+
+##### Path = 1 direction + N direction changes
+
+Once a robot finds a shortest path between two EC's, it reports it as a sequence of directions, encoded in multiple messages over approx. 10 turns (see "Flag communication" message M2 and M3). We start by transmitting an initial direction, followed by a sequence of direction changes. Each **direction change can take 5 possible values**: turn left, slight left, slight right, turn right and straight). We can encode this in a quintal system, with "5-bits" that can take five values, so that each 5-bit encodes one move. In total a path of N steps is thus stored by a number between 0 and 5^N.
+
+Unfortunately, in only message M2 we could only store a measly 7 moves. Therefore, we transmit the large number required to represent the path in M2 and subsequent M3 messages. For a path of 64 moves, we need 149 bits, which boils down to 2*M2 + ceil(149/21) *M3 = 10 messages.
+
 ## Flag communications
 
 Each robot has a 24-bit flag. Robots can see each others' flags if they are in sensor range, and EC's can query the flag of a robot whose ID they have and vice versa. We use 14 bits to transmit a location, and 10 bits for any other information.
 
-We use the bits as follows for bots communicating to the EC:
+### Communication direction 1: Mobile robot to (master) EC
+
+We use the bits as follows for bots communicating to the EC, we call them M(obile)-messages:
 
 ```
-// "Extra information" (non-location)
-
-0  - Signaling=1, Not signaling=0  (rest of bits should also be 0)
-1
+0  - Bits 0-2 = Message type. No message = 0, Report EC location = 1,
+1    Report shortest path = 2 & 3
 2
-3
+```
+
+The different messages use the rest of the bits differently.
+
+#### Message M0: Nothing to report
+
+#### Message M1: Report EC location
+
+```
+3 
 4
 5
 6  - Bits 6-7: conviction of target EC
@@ -91,7 +110,7 @@ We use the bits as follows for bots communicating to the EC:
 8  - Team Neutral = 1
 9  - Team A = 0, Team B = 1
 
-// Location follows
+// Location follows (for EC location report)
 
 10 - Bits up to 23: 14 bits of location information
 11   encoded by 128 * (x % 128) + (y % 128)   
@@ -99,19 +118,51 @@ We use the bits as follows for bots communicating to the EC:
 23
 ```
 
-And the following flags to communicate from the EC to moving bots:
+#### Messages M2 and M3: reporting shortest paths.
+
+See "Pathfinding", we need about 10 turns to submit a complete shortest path using two message types. The first two messages explicitly define the locations of the ECs to connect, so that any robot can transmit a shortest path from anywhere, and each EC that has seen the robot before will receive it. (We don't optimize by making the master EC the implicit start of the path and communicating in sensor range of the end-of-path EC).
+
+##### Message M2: Report shortest path - start of communication
+
+A path-report is started with two messages M2.
 
 ```
-// "Extra information" (non-location)
+3 - Bits 3-6: Initial direction
+...
+7 - First or second EC: 0 = first, 1 = second.
+..
+10 - Bits 10 - 23 encode the location of the EC that the bot is talking about.
 
-0  - Attack=1, Explore=0
-1  - ...
-9
+```
 
+##### Message M3: Report shortest path - rest of communication
+
+```
+3 - 21 Bits 3-23 encode the rest of the path. The end-of-path is transmitted by two subsequent turns to the right (always suboptimal).
+```
+
+### Communication direction 1: EC to mobile robots
+
+```
+0  - Bits 0-2 = Message type. No message = 0, Attack = 1,
+1    Report shortest path = 2 & 3
+2
+...
+```
+
+#### Message E0: No message
+
+#### Message E1: Attack Location
+
+```
+9  - Bot type: 0 = Politician (Attack EC), 1 = Muckraker (Destroy slanderers).
 // Location follows
-
 10 - Bits up to 23: 14 bits of location information
 11   encoded by 128 * (x % 128) + (y % 128)   
 ...
 23
 ```
+
+#### Messages E2 and E3: reporting shortest paths.
+
+See M2 and M3.
