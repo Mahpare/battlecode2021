@@ -16,6 +16,7 @@ public abstract class Robot {
 	static RobotInfo[] nearbyEnemies;
 	static RobotInfo[] nearbyNeutrals;
 	static RobotInfo[] nearbyBots;
+	static LocationMap map;
 	
     static final Direction[] directions = {
         Direction.NORTH,
@@ -43,6 +44,7 @@ public abstract class Robot {
 		Robot.rc = rc;
 		allyTeam = rc.getTeam();
 		enemyTeam = allyTeam.opponent();
+		map = new LocationMap(rc);
 	}
 	
     /**

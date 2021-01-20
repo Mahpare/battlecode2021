@@ -65,10 +65,6 @@ public class FlagInfo {
     	if (ownLocation.distanceSquaredTo(alternative) < ownLocation.distanceSquaredTo(actualLocation)) {
     		actualLocation = alternative;
     	}
-    	alternative = actualLocation.translate(-128,  0);
-       	if (ownLocation.distanceSquaredTo(alternative) < ownLocation.distanceSquaredTo(actualLocation)) {
-    		actualLocation = alternative;
-    	}
        	alternative = actualLocation.translate(128,  0);
        	if (ownLocation.distanceSquaredTo(alternative) < ownLocation.distanceSquaredTo(actualLocation)) {
     		actualLocation = alternative;

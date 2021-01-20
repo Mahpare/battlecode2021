@@ -12,7 +12,7 @@ public abstract class AttackRobot extends MovingRobot {
 	
 	public void run() throws GameActionException {
 		super.run();
-		if (flagEC.attack) {
+		if (flagEC.attackEC) {
 			attacking = true;
 			destination = flagEC.location;
 		}

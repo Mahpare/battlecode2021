@@ -18,6 +18,7 @@ public abstract class MovingRobot extends Robot {
 	static RobotInfo masterEC;
 	static FlagInfoEC flagEC;
 	static boolean exploring = true;
+	static Direction moveDirection;
 	static MapLocation myLoc;
 	static MapLocation destination;
 
@@ -30,12 +31,15 @@ public abstract class MovingRobot extends Robot {
 	            if (maybeEC != null && maybeEC.getType() == RobotType.ENLIGHTENMENT_CENTER) {
 	            	masterID = maybeEC.getID();
 	            	masterEC = rc.senseRobot(masterID);
+	            	Direction awayFromEC = dir.opposite();
+	            	destination = rc.getLocation().translate(64 * awayFromEC.dx, 64 * awayFromEC.dy);
 	            }
 	    	} catch (GameActionException e) {
 	    		// adjacent location not on the map
 	    		continue;
 	    	}
 	    }
+		
 	}
 
 	public void run() throws GameActionException {
@@ -43,12 +47,9 @@ public abstract class MovingRobot extends Robot {
 		myLoc = rc.getLocation();
 		maybeSendECLocation();
 		readECFlag();
-		if (exploring) {
-			explore();
-		}
 	}
 	
-	// Move away from allied Robots, keep going
+	// Move away from allied Robots, stay away from map edges
 	public void explore() throws GameActionException {
 		RobotInfo[] sensed = rc.senseNearbyRobots(-1, allyTeam);
 		ArrayList<MapLocation> locsToAvoid = new ArrayList<MapLocation>();
@@ -196,7 +197,7 @@ public abstract class MovingRobot extends Robot {
 				return Direction.NORTHEAST;
 			}
 		}
-    }    
+    }
 	
 	static void maybeSendECLocation() throws GameActionException {
     	RobotInfo[] nearbyBots = rc.senseNearbyRobots();
