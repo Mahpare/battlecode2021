@@ -174,7 +174,7 @@ public abstract class MovingRobot extends Robot {
 	
 	static void maybeSendECLocation() throws GameActionException {
     	RobotInfo[] nearbyBots = rc.senseNearbyRobots();
-    	if (rc.getFlag(rc.getID()) != 0) {
+    	if (rc.getFlag(rc.getID()) != 0) { // Reset my own flag
     		rc.setFlag(0);
     	} else {
 	    	for (RobotInfo ri : nearbyBots) {

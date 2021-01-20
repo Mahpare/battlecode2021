@@ -1,5 +1,6 @@
 package hackatrainee_v2;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
@@ -10,17 +11,25 @@ import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
+import hackatrainee_v1.FlagInfoEC;
 
 public abstract class MovingRobot extends Robot {
 	static int masterID;
+	static RobotInfo masterEC;
+	static FlagInfoEC flagEC;
+	static boolean exploring = true;
+	static MapLocation myLoc;
+	static MapLocation destination;
 
 	public MovingRobot(RobotController rc) {
 		super(rc);
+		flagEC = new FlagInfoEC();
 		for (Direction dir : directions) {
 	    	try {
 	    		RobotInfo maybeEC = rc.senseRobotAtLocation(rc.adjacentLocation(dir));
 	            if (maybeEC != null && maybeEC.getType() == RobotType.ENLIGHTENMENT_CENTER) {
 	            	masterID = maybeEC.getID();
+	            	masterEC = rc.senseRobot(masterID);
 	            }
 	    	} catch (GameActionException e) {
 	    		// adjacent location not on the map
@@ -31,7 +40,29 @@ public abstract class MovingRobot extends Robot {
 
 	public void run() throws GameActionException {
 		super.run();
+		myLoc = rc.getLocation();
 		maybeSendECLocation();
+		readECFlag();
+		if (exploring) {
+			explore();
+		}
+	}
+	
+	// Move away from allied Robots, keep going
+	public void explore() throws GameActionException {
+		RobotInfo[] sensed = rc.senseNearbyRobots(-1, allyTeam);
+		ArrayList<MapLocation> locsToAvoid = new ArrayList<MapLocation>();
+		//TODO: move away from master EC
+		MapLocation awayFromOthers = myLoc;
+		if (sensed.length > 0) {
+			for (RobotInfo ri : sensed) {
+				awayFromOthers = awayFromOthers.subtract(myLoc.directionTo(ri.getLocation()));
+			}
+		} else {
+			awayFromOthers = myLoc.add(directionAwayFrom(masterEC.getLocation()));
+			System.out.println("setting destination to " + awayFromOthers + ", coming from " + myLoc);
+		}
+		destination = awayFromOthers;
 	}
 	
 	static void moveTowardsDestination() {
@@ -48,28 +79,22 @@ public abstract class MovingRobot extends Robot {
 	        	}
 	        }
         } catch (GameActionException e) {
-        	tries = moveChoices.length; // Just go for random
-        }
-        if (tries == moveChoices.length) {
-        	try {
-        		tryMove(randomDirection());
-        	} catch (GameActionException e) {
-        		// Well nevermind then.
-        	}
+        	System.out.println("Exception while trying to move.");
         }
     }
 	
 	static Direction[] directionsTowardsDestination(MapLocation destination) {
     	if (destination == null) {
     		return Direction.allDirections();
+    	}    	
+    	if (myLoc.equals(destination))
+    		return new Direction[] { Direction.CENTER };
+    	if (myLoc.isAdjacentTo(destination)) {
+    		return new Direction[] { myLoc.directionTo(destination) };
     	}
-    	MapLocation source = rc.getLocation();
     	
-    	if (source.equals(destination))
-    		return new Direction[]{ Direction.CENTER };
-    	
-    	int xDiff = destination.x - source.x;
-    	int yDiff = destination.y - source.y;
+    	int xDiff = destination.x - myLoc.x;
+    	int yDiff = destination.y - myLoc.y;
 
     	Set<Direction> choices = new HashSet<Direction>();
 		if (xDiff > 0) {
@@ -124,19 +149,20 @@ public abstract class MovingRobot extends Robot {
         if (rc.canMove(dir)) {
             rc.move(dir);
             return true;
-        } else return false;
+        } else {
+        	return false;
+        }
     }
     
-    static Direction escapeFromDirection(MapLocation suspiciousPlace) {
-    	MapLocation source = rc.getLocation();
-    	if (source.equals(suspiciousPlace)) {
+    static Direction directionAwayFrom(MapLocation awayFrom) {
+    	if (myLoc.equals(awayFrom)) {
     		Direction direct= randomDirection();
     		while (direct == Direction.CENTER)
     			direct= randomDirection();
     		return direct;
     	}
-    	int xDiff = suspiciousPlace.x - source.x;
-    	int yDiff = suspiciousPlace.y - source.y;
+    	int xDiff = awayFrom.x - myLoc.x;
+    	int yDiff = awayFrom.y - myLoc.y;
 		// Vertical path
 		if(xDiff==0) { 
 			if(yDiff>0) {
@@ -183,10 +209,16 @@ public abstract class MovingRobot extends Robot {
 	    			fi.location = ri.getLocation();
 	    			fi.team = ri.getTeam();
 	    			fi.conviction = ri.getConviction();
-	    			System.out.println("Setting flag to " + fi.encoded());
+//	    			System.out.println("Setting flag to " + fi.encoded());
 	    			rc.setFlag(fi.encoded());
 	    		}
 	    	}
     	}
     }
+	
+	static void readECFlag() throws GameActionException {
+		// Check signal, should we be attacking?
+    	int flagInt = rc.getFlag(masterID);
+    	flagEC.setFromEncoded(flagInt, rc.getLocation(), rc.getTeam());
+	}
 }

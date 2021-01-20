@@ -104,8 +104,8 @@ And the following flags to communicate from the EC to moving bots:
 ```
 // "Extra information" (non-location)
 
-0  - Attack=1, Not signaling=0  (rest of bits should also be 0)
-...
+0  - Attack=1, Explore=0
+1  - ...
 9
 
 // Location follows

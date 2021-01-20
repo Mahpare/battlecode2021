@@ -36,7 +36,7 @@ public class Slanderer extends MovingRobot {
     	}
     	if(getAway == true) {
     		//find ECs location, then move to the opposite direction!
-    		Direction direct = escapeFromDirection(EcLocation);
+    		Direction direct = directionAwayFrom(EcLocation);
     		if (tryMove(direct)) {
     			System.out.println("I moved!");
     			return;
@@ -56,7 +56,7 @@ public class Slanderer extends MovingRobot {
     	}
     	if(getAway == true) {
     		//find muckrakerLocation, then move to the opposite direction!
-    		Direction direct = escapeFromDirection(muckrakerLocation);
+    		Direction direct = directionAwayFrom(muckrakerLocation);
     		if (tryMove(direct)) {
     			System.out.println("I moved!");
     			return;

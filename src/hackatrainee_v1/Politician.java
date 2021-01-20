@@ -16,17 +16,7 @@ public class Politician extends AttackRobot {
 	
 	public void run() throws GameActionException {
 		super.run();    	
-    	// Check signal, should we be attacking?
-    	int flagInt = rc.getFlag(masterID);
-    	FlagInfoEC fi = new FlagInfoEC();
-    	fi.setFromEncoded(flagInt, rc.getLocation(), rc.getTeam());
-    	if (fi.attack) {
-    		attacking = true;
-    		destination = fi.location;
-    	} else {
-    		attacking = false;
-    		destination = null;
-    	
+    	if (!attacking) {    	
 	    	//go away from base ECs
 	    	Team team = rc.getTeam();
 	    	int sensorRadius = rc.getType().sensorRadiusSquared;

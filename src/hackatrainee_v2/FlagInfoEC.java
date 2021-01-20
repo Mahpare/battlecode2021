@@ -5,10 +5,13 @@ import battlecode.common.Team;
 
 public class FlagInfoEC extends FlagInfo {
 	public boolean attack;
+	public boolean explore;
 	
 	public void setFromEncoded(int encodedInfo, MapLocation ownLocation, Team ownTeam) {
 		if (Util.getBit(encodedInfo, 0)) {
 			attack = true;
+		} else {
+			explore = true;
 		}
 		location = getLocationFromFlag(encodedInfo, ownLocation);
 	}
@@ -22,7 +25,10 @@ public class FlagInfoEC extends FlagInfo {
 	}
 	
 	private int encodeExtraInfo() {
-		int result = 1 << 9;  // We are attacking
+		int result = 0;
+		if (attack) {
+			result = 1 << 9;  // We are attacking
+		}
 		result = result << 14;
 		return result;
 	}
